@@ -1,0 +1,62 @@
+{
+  "cafe-en-grains": {
+    "product_id": "gid://shopify/Product/9081151488198",
+    "variant_id": "gid://shopify/ProductVariant/47631606776006",
+    "price": "90.00"
+  },
+  "moulin-a-cafe": {
+    "product_id": "gid://shopify/Product/9081151586502",
+    "variant_id": "gid://shopify/ProductVariant/47631606874310",
+    "price": "320.00"
+  },
+  "cafe-moulu": {
+    "product_id": "gid://shopify/Product/9081151652038",
+    "variant_id": "gid://shopify/ProductVariant/47631606939846",
+    "price": "85.00"
+  },
+  "filtres-papier": {
+    "product_id": "gid://shopify/Product/9081151717574",
+    "variant_id": "gid://shopify/ProductVariant/47631607005382",
+    "price": "25.00"
+  },
+  "cafetiere-a-piston": {
+    "product_id": "gid://shopify/Product/9081151815878",
+    "variant_id": "gid://shopify/ProductVariant/47631607070918",
+    "price": "250.00"
+  },
+  "tasse-en-ceramique": {
+    "product_id": "gid://shopify/Product/9081151881414",
+    "variant_id": "gid://shopify/ProductVariant/47631607136454",
+    "price": "60.00"
+  },
+  "mug-isotherme": {
+    "product_id": "gid://shopify/Product/9081151946950",
+    "variant_id": "gid://shopify/ProductVariant/47631607234758",
+    "price": "150.00"
+  },
+  "the-vert": {
+    "product_id": "gid://shopify/Product/9081152012486",
+    "variant_id": "gid://shopify/ProductVariant/47631607300294",
+    "price": "70.00"
+  },
+  "theiere": {
+    "product_id": "gid://shopify/Product/9081152078022",
+    "variant_id": "gid://shopify/ProductVariant/47631607365830",
+    "price": "220.00"
+  },
+  "miel-de-montagne": {
+    "product_id": "gid://shopify/Product/9081152143558",
+    "variant_id": "gid://shopify/ProductVariant/47631607431366",
+    "price": "110.00"
+  },
+  "biscuits-aux-amandes": {
+    "product_id": "gid://shopify/Product/9081152274630",
+    "variant_id": "gid://shopify/ProductVariant/47631607562438",
+    "price": "45.00"
+  },
+  "poster-cafe-vintage": {
+    "product_id": "gid://shopify/Product/9081152340166",
+    "variant_id": "gid://shopify/ProductVariant/47631607627974",
+    "price": "80.00"
+  }
+}
