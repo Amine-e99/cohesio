@@ -2,7 +2,7 @@
 
 client_id = "2cff1a1de2af8b1fa3b51dac62959fa5"
 name = "cohesio"
-application_url = "https://example.com"
+application_url = "https://cohesio-app-amine.azurewebsites.net"
 embedded = true
 
 [access_scopes]
@@ -30,8 +30,9 @@ url = "/proxy"
 prefix = "apps"
 subpath = "cohesio"
 
+
 [auth]
-redirect_urls = [ "https://example.com/api/auth" ]
+redirect_urls = [ "https://cohesio-app-amine.azurewebsites.net/auth/callback" ]
 
 [build]
-automatically_update_urls_on_dev = true
+automatically_update_urls_on_dev = false
