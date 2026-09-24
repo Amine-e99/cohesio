@@ -11,8 +11,22 @@ const PRODUCTS_QUERY = `#graphql
       nodes {
         id
         title
+        handle
         status
         createdAt
+        featuredMedia {
+          preview {
+            image {
+              url
+            }
+          }
+        }
+        priceRangeV2 {
+          minVariantPrice {
+            amount
+            currencyCode
+          }
+        }
       }
       pageInfo {
         hasNextPage
@@ -24,9 +38,16 @@ const PRODUCTS_QUERY = `#graphql
 interface ProductNode {
   id: string;
   title: string;
+  handle: string;
   /** ACTIVE, ARCHIVED, DRAFT, UNLISTED. */
   status: string;
   createdAt: string;
+  /** Média principal ; `image` est null pour une vidéo ou un modèle 3D sans aperçu. */
+  featuredMedia: { preview: { image: { url: string } | null } | null } | null;
+  /** Prix le plus bas parmi les variantes (`amount` : décimal en texte). */
+  priceRangeV2: {
+    minVariantPrice: { amount: string; currencyCode: string };
+  };
 }
 
 interface ProductsPage {
@@ -65,7 +86,7 @@ export async function fetchAllProducts(
 
 /**
  * Synchronise le catalogue dans `products` : chaque produit est créé ou mis à
- * jour (titre et statut peuvent changer côté Shopify).
+ * jour (titre, statut, handle, image et prix peuvent changer côté Shopify).
  *
  * @returns le nombre de produits synchronisés.
  */
@@ -79,8 +100,12 @@ export async function syncProducts(
     products.map((product) => {
       const data = {
         title: product.title,
+        handle: product.handle,
         status: product.status,
         createdAt: new Date(product.createdAt),
+        imageUrl: product.featuredMedia?.preview?.image?.url ?? null,
+        price: product.priceRangeV2.minVariantPrice.amount,
+        currencyCode: product.priceRangeV2.minVariantPrice.currencyCode,
       };
 
       return prisma.product.upsert({

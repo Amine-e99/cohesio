@@ -51,6 +51,10 @@ model Product {
   title     String
   status    String                       // ACTIVE, DRAFT, ARCHIVED
   createdAt DateTime @map("created_at")  // date de création côté Shopify
+  handle       String                              // URL vitrine : /products/<handle>
+  imageUrl     String? @map("image_url")           // image principale
+  price        String?                             // prix minimum des variantes (decimal en texte)
+  currencyCode String? @map("currency_code")
 
   @@unique([shopId, productId])
   @@map("products")
