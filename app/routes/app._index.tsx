@@ -3,30 +3,87 @@ import type {
   HeadersFunction,
   LoaderFunctionArgs,
 } from "react-router";
-import { useEffect, useSyncExternalStore } from "react";
+import { useEffect } from "react";
 import { useFetcher, useLoaderData, useRevalidator } from "react-router";
 import { boundary } from "@shopify/shopify-app-react-router/server";
 
 import prisma from "../db.server";
+import { LocalDate } from "../components/LocalDate";
 import { authenticate } from "../shopify.server";
 import { importAllOrders } from "../services/import-orders.server";
 import {
   getEngineStatus,
   triggerRecompute,
 } from "../services/engine.server";
+import { getProductTitles } from "../services/titles.server";
 
 /** Pendant un calcul, la page se rafraîchit à ce rythme. */
 const STATUS_POLL_MS = 2_000;
 
+/** Seuils de fiabilité, en nombre de commandes distinctes analysées. */
+const RELIABILITY_MEDIUM = 100;
+const RELIABILITY_GOOD = 500;
+
+async function countDistinctOrders(shopId: string): Promise<number> {
+  const rows = await prisma.$queryRaw<{ n: number }[]>`
+    SELECT COUNT(DISTINCT order_id)::int AS n
+    FROM order_lines
+    WHERE shop_id = ${shopId}
+  `;
+  return rows[0]?.n ?? 0;
+}
+
+/**
+ * Pour chaque produit « à lier », son meilleur partenaire : la paire où il est
+ * product_a avec la plus haute confiance, départagée par le lift.
+ */
+async function getPackSuggestions(shopId: string) {
+  const toLink = await prisma.productStat.findMany({
+    where: { shopId, classification: "a_lier" },
+    select: { productId: true },
+  });
+  if (toLink.length === 0) {
+    return [];
+  }
+
+  const pairs = await prisma.productPair.findMany({
+    where: { shopId, productA: { in: toLink.map((s) => s.productId) } },
+    orderBy: [{ confidence: "desc" }, { lift: "desc" }],
+    select: { productA: true, productB: true, confidence: true },
+  });
+
+  const best = new Map<string, (typeof pairs)[number]>();
+  for (const pair of pairs) {
+    if (!best.has(pair.productA)) {
+      best.set(pair.productA, pair);
+    }
+  }
+
+  const titles = await getProductTitles(
+    shopId,
+    [...best.values()].flatMap((p) => [p.productA, p.productB]),
+  );
+
+  return [...best.values()]
+    .sort((a, b) => b.confidence - a.confidence)
+    .map((p) => ({
+      productA: titles.get(p.productA) ?? p.productA,
+      productB: titles.get(p.productB) ?? p.productB,
+      confidencePct: Math.round(p.confidence * 100),
+    }));
+}
+
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const { session } = await authenticate.admin(request);
 
-  const [totalLines, engine] = await Promise.all([
+  const [totalLines, ordersCount, packs, engine] = await Promise.all([
     prisma.orderLine.count({ where: { shopId: session.shop } }),
+    countDistinctOrders(session.shop),
+    getPackSuggestions(session.shop),
     getEngineStatus(session.shop),
   ]);
 
-  return { shop: session.shop, totalLines, engine };
+  return { shop: session.shop, totalLines, ordersCount, packs, engine };
 };
 
 export const action = async ({ request }: ActionFunctionArgs) => {
@@ -51,31 +108,9 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   }
 };
 
-/**
- * Date formatée dans le fuseau du navigateur. Le serveur, qui ne connaît pas
- * ce fuseau, rend la date ISO ; le client la remplace après l'hydratation.
- */
-const noSubscription = () => () => {};
-
-function LocalDate({ iso }: { iso: string }) {
-  const isClient = useSyncExternalStore(
-    noSubscription,
-    () => true,
-    () => false,
-  );
-
-  const text = isClient
-    ? new Date(iso).toLocaleString("fr-FR", {
-        dateStyle: "medium",
-        timeStyle: "short",
-      })
-    : iso;
-
-  return <time dateTime={iso}>{text}</time>;
-}
-
 export default function Index() {
-  const { shop, totalLines, engine } = useLoaderData<typeof loader>();
+  const { shop, totalLines, ordersCount, packs, engine } =
+    useLoaderData<typeof loader>();
   const fetcher = useFetcher<typeof action>();
   const revalidator = useRevalidator();
 
@@ -124,6 +159,43 @@ export default function Index() {
             "Aucune analyse pour l'instant."
           )}
         </s-paragraph>
+      </s-section>
+
+      <s-section heading="Fiabilité">
+        {ordersCount < RELIABILITY_MEDIUM ? (
+          <s-banner heading="Fiabilité faible" tone="warning">
+            Seulement {ordersCount} commandes analysées. Il en faut au moins{" "}
+            {RELIABILITY_MEDIUM} pour que les associations aient du sens.
+          </s-banner>
+        ) : ordersCount < RELIABILITY_GOOD ? (
+          <s-paragraph>
+            Fiabilité moyenne : {ordersCount} commandes analysées. Les
+            résultats sont indicatifs.
+          </s-paragraph>
+        ) : (
+          <s-paragraph>
+            Fiabilité bonne : {ordersCount} commandes analysées.
+          </s-paragraph>
+        )}
+      </s-section>
+
+      <s-section heading="Suggestions de packs">
+        {packs.length === 0 ? (
+          <s-paragraph>
+            Aucune suggestion pour l&apos;instant : aucun produit à lier
+            n&apos;a de partenaire.
+          </s-paragraph>
+        ) : (
+          <s-unordered-list>
+            {packs.map((pack) => (
+              <s-list-item key={pack.productA}>
+                Proposer {pack.productA} avec {pack.productB} —{" "}
+                {pack.confidencePct} % des acheteurs de {pack.productA}{" "}
+                prennent aussi {pack.productB}
+              </s-list-item>
+            ))}
+          </s-unordered-list>
+        )}
       </s-section>
 
       <s-section heading="Import des commandes">
