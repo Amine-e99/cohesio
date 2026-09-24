@@ -85,3 +85,15 @@ model ProductStat {
   @@unique([shopId, productId])
   @@map("product_stats")
 }
+
+model ShopSettings {
+  id            Int      @id @default(autoincrement())
+  shopId        String   @unique @map("shop_id")
+  minCoCount    Int      @default(8) @map("min_co_count")       // commandes communes minimum
+  minConfidence Float    @default(0.2) @map("min_confidence")   // fraction 0–1
+  minLift       Float    @default(1.5) @map("min_lift")
+  deadDays      Int      @default(30) @map("dead_days")         // jours sans vente -> à déstocker
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  @@map("shop_settings")
+}

@@ -20,14 +20,20 @@ class RecomputeResult:
 
 def recompute(shop: str) -> RecomputeResult:
     """Charge, calcule et enregistre paires et stats d'une boutique (CLI et API)."""
+    settings = db.load_settings(shop)
     lines = db.load_order_lines(shop)
     products = db.load_products(shop)
     # processed_at est stocké en UTC sans fuseau (Prisma) : même convention ici
     now = datetime.now(timezone.utc).replace(tzinfo=None)
 
     pairs = compute_pairs(lines)
-    kept = filter_pairs(pairs)
-    stats = compute_stats(products, lines, kept, now)
+    kept = filter_pairs(
+        pairs,
+        min_co_count=settings.min_co_count,
+        min_confidence=settings.min_confidence,
+        min_lift=settings.min_lift,
+    )
+    stats = compute_stats(products, lines, kept, now, dead_days=settings.dead_days)
 
     db.save_pairs(shop, kept)
     db.save_stats(shop, stats)

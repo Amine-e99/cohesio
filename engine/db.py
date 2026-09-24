@@ -1,5 +1,6 @@
 """Accès PostgreSQL du moteur. Toute requête est paramétrée et filtrée par shop_id."""
 import os
+from dataclasses import dataclass
 
 import pandas as pd
 import psycopg
@@ -19,6 +20,29 @@ def _query_df(sql: str, params: tuple) -> pd.DataFrame:
         cur.execute(sql, params)
         columns = [col.name for col in cur.description]
         return pd.DataFrame(cur.fetchall(), columns=columns)
+
+
+@dataclass(frozen=True)
+class Settings:
+    """Seuils d'une boutique ; défauts identiques à ceux de ShopSettings (Prisma)."""
+    min_co_count: int = 8
+    min_confidence: float = 0.20
+    min_lift: float = 1.5
+    dead_days: int = 30
+
+
+def load_settings(shop: str) -> Settings:
+    """Réglages d'UNE boutique, ou les défauts si elle n'en a jamais enregistré."""
+    with connect() as conn:
+        row = conn.execute(
+            "SELECT min_co_count, min_confidence, min_lift, dead_days "
+            "FROM shop_settings WHERE shop_id = %s",
+            (shop,),
+        ).fetchone()
+    if row is None:
+        return Settings()
+    min_co_count, min_confidence, min_lift, dead_days = row
+    return Settings(int(min_co_count), float(min_confidence), float(min_lift), int(dead_days))
 
 
 def load_order_lines(shop: str) -> pd.DataFrame:

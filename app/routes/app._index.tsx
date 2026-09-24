@@ -91,16 +91,28 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
   const formData = await request.formData();
 
-  if (formData.get("intent") !== "import") {
-    return { ok: false as const, message: "Action inconnue." };
+  const intent = formData.get("intent");
+
+  if (intent === "recompute") {
+    const analysis = await triggerRecompute(session.shop);
+    return { intent: "recompute" as const, analysis };
+  }
+
+  if (intent !== "import") {
+    return {
+      intent: "import" as const,
+      ok: false as const,
+      message: "Action inconnue.",
+    };
   }
 
   try {
     const result = await importAllOrders(admin, session.shop);
     const analysis = await triggerRecompute(session.shop);
-    return { ok: true as const, ...result, analysis };
+    return { intent: "import" as const, ok: true as const, ...result, analysis };
   } catch (error) {
     return {
+      intent: "import" as const,
       ok: false as const,
       message:
         error instanceof Error ? error.message : "L'import n'a pas abouti.",
@@ -108,10 +120,17 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   }
 };
 
+/** Évite « Moteur injoignable (Moteur injoignable.) » : la raison n'est ajoutée que si elle apporte quelque chose. */
+function engineErrorText(message: string): string {
+  const title = "Moteur injoignable";
+  return message.startsWith(title) ? message : `${title} (${message})`;
+}
+
 export default function Index() {
   const { shop, totalLines, ordersCount, packs, engine } =
     useLoaderData<typeof loader>();
   const fetcher = useFetcher<typeof action>();
+  const recomputeFetcher = useFetcher<typeof action>();
   const revalidator = useRevalidator();
 
   // Tant que le moteur calcule, on relit le statut jusqu'à la fin du calcul.
@@ -125,7 +144,17 @@ export default function Index() {
   }, [engineRunning, revalidator]);
 
   const isImporting = fetcher.state !== "idle";
-  const result = fetcher.data;
+  const result = fetcher.data?.intent === "import" ? fetcher.data : undefined;
+
+  const isRecomputing = recomputeFetcher.state !== "idle";
+  const recomputeResult =
+    recomputeFetcher.data?.intent === "recompute"
+      ? recomputeFetcher.data
+      : undefined;
+
+  const startRecompute = () => {
+    recomputeFetcher.submit({ intent: "recompute" }, { method: "post" });
+  };
 
   const startImport = () => {
     fetcher.submit({ intent: "import" }, { method: "post" });
@@ -147,7 +176,7 @@ export default function Index() {
         </s-paragraph>
         <s-paragraph>
           {!engine.ok ? (
-            `Moteur injoignable (${engine.message})`
+            engineErrorText(engine.message)
           ) : engine.running ? (
             "Analyse en cours…"
           ) : engine.computedAt ? (
@@ -159,6 +188,20 @@ export default function Index() {
             "Aucune analyse pour l'instant."
           )}
         </s-paragraph>
+
+        {recomputeResult && !recomputeResult.analysis.ok ? (
+          <s-banner heading="Analyse non relancée" tone="warning">
+            {recomputeResult.analysis.message}
+          </s-banner>
+        ) : null}
+
+        <s-button
+          loading={isRecomputing}
+          disabled={isRecomputing || engineRunning}
+          onClick={startRecompute}
+        >
+          Recalculer maintenant
+        </s-button>
       </s-section>
 
       <s-section heading="Fiabilité">
