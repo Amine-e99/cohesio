@@ -33,3 +33,5 @@ pnpm-lock.yaml
 .venv/
 __pycache__/
 .azure/
+
+*.zip
