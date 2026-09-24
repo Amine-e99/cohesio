@@ -35,3 +35,10 @@ __pycache__/
 .azure/
 
 *.zip
+
+.claude/
+.cursor/
+.gemini/
+.mcp.json
+AGENTS.md
+CLAUDE.md
