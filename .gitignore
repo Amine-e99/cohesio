@@ -30,3 +30,4 @@ pnpm-lock.yaml
 .react-router/
 
 .venv/
+__pycache__/
