@@ -18,6 +18,8 @@ app = FastAPI(title="Cohesio engine")
 
 # Boutiques dont un calcul est en cours (un seul processus uvicorn)
 _running: set[str] = set()
+# Boutiques à recalculer une fois de plus : demande reçue pendant leur calcul
+_pending: set[str] = set()
 _running_lock = threading.Lock()
 
 
@@ -35,13 +37,21 @@ class RecomputeRequest(BaseModel):
 
 
 def _run_recompute(shop: str) -> None:
-    try:
-        recompute(shop)
-    except Exception:
-        logger.exception("Échec du calcul pour %s", shop)
-    finally:
+    """Calcule, puis recommence tant qu'une demande est arrivée pendant le calcul.
+
+    Plusieurs demandes pendant un même calcul ne donnent qu'une seule relance.
+    """
+    while True:
+        try:
+            recompute(shop)
+        except Exception:
+            logger.exception("Échec du calcul pour %s", shop)
         with _running_lock:
+            if shop in _pending:
+                _pending.discard(shop)
+                continue
             _running.discard(shop)
+            return
 
 
 @app.get("/health")
@@ -53,7 +63,9 @@ def health() -> dict:
 def post_recompute(body: RecomputeRequest, background: BackgroundTasks) -> dict:
     with _running_lock:
         if body.shop in _running:
-            raise HTTPException(status.HTTP_409_CONFLICT, "Calcul déjà en cours pour cette boutique.")
+            # Les données ont pu changer depuis le début du calcul : on relancera à la fin
+            _pending.add(body.shop)
+            return {"status": "queued"}
         _running.add(body.shop)
     background.add_task(_run_recompute, body.shop)
     return {"status": "accepted"}
