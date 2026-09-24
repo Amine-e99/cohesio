@@ -32,3 +32,15 @@ model Session {
   refreshToken        String?
   refreshTokenExpires DateTime?
 }
+model OrderLine {
+  id          Int      @id @default(autoincrement())
+  shopId      String   @map("shop_id")     // ex. cohesio.myshopify.com
+  orderId     String   @map("order_id")    // gid Shopify de la commande
+  productId   String   @map("product_id")  // gid Shopify du produit
+  quantity    Int
+  processedAt DateTime @map("processed_at") // date réelle de la commande
+
+  @@unique([shopId, orderId, productId])   // idempotence : pas de doublon
+  @@index([shopId, productId, processedAt]) // stock mort : dernière vente par produit
+  @@map("order_lines")
+}
