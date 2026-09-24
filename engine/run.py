@@ -20,6 +20,7 @@ class RecomputeResult:
 
 def recompute(shop: str) -> RecomputeResult:
     """Charge, calcule et enregistre paires et stats d'une boutique (CLI et API)."""
+    db.purge_old_order_lines(shop)
     settings = db.load_settings(shop)
     lines = db.load_order_lines(shop)
     products = db.load_products(shop)
@@ -35,8 +36,7 @@ def recompute(shop: str) -> RecomputeResult:
     )
     stats = compute_stats(products, lines, kept, now, dead_days=settings.dead_days)
 
-    db.save_pairs(shop, kept)
-    db.save_stats(shop, stats)
+    db.save_results(shop, kept, stats)
     return RecomputeResult(lines, products, pairs, kept, stats)
 
 

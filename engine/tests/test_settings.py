@@ -61,8 +61,8 @@ def test_recompute_passes_settings(monkeypatch):
     monkeypatch.setattr(db, "load_settings", lambda s: loaded.append(s) or custom)
     monkeypatch.setattr(db, "load_order_lines", lambda s: lines)
     monkeypatch.setattr(db, "load_products", lambda s: products)
-    monkeypatch.setattr(db, "save_pairs", lambda s, df: None)
-    monkeypatch.setattr(db, "save_stats", lambda s, df: None)
+    monkeypatch.setattr(db, "purge_old_order_lines", lambda s: 0)
+    monkeypatch.setattr(db, "save_results", lambda s, pairs, stats: True)
 
     filter_calls: list[dict] = []
     real_filter = run.filter_pairs
