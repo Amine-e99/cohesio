@@ -47,8 +47,8 @@ def _replace_rows(shop: str, table: str, columns: list[str], rows: list[tuple]) 
     """
     placeholders = ", ".join(["%s"] * (len(columns) + 1))
     insert = (
-        f"INSERT INTO {table} (shop_id, {', '.join(columns)}, computed_at) "
-        f"VALUES ({placeholders}, now())"
+        f"INSERT INTO {table} (shop_id, {', '.join(columns)}, computed_at) "  # UTC sans fuseau, comme Prisma
+        f"VALUES ({placeholders}, now() AT TIME ZONE 'UTC')"
     )
     with connect() as conn:
         with conn.transaction(), conn.cursor() as cur:
@@ -81,3 +81,17 @@ def save_stats(shop: str, stats: pd.DataFrame) -> None:
         ["product_id", "total_qty", "orders_count", "last_sold_at", "classification"],
         rows,
     )
+
+
+def load_status(shop: str) -> dict:
+    """Dernier calcul de la boutique : date (UTC sans fuseau) et volumes enregistrés."""
+    with connect() as conn:
+        computed_at, pairs = conn.execute(
+            "SELECT MAX(computed_at), COUNT(*) FROM product_pairs WHERE shop_id = %s",
+            (shop,),
+        ).fetchone()
+        (stats,) = conn.execute(
+            "SELECT COUNT(*) FROM product_stats WHERE shop_id = %s",
+            (shop,),
+        ).fetchone()
+    return {"computed_at": computed_at, "pairs": pairs, "stats": stats}
