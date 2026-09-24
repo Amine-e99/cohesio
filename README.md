@@ -163,7 +163,7 @@ The app (TypeScript) has no automated tests; the HMAC checks described above wer
 - **Access token not yet encrypted at rest.** The Shopify access token is stored in the `Session` table as provided by the template's Prisma session storage. Application-level encryption is planned.
 - **In-memory recompute lock.** The engine tracks running and pending recomputes in process memory, which is only correct with a single engine instance.
 - **No bundle creation yet.** Pack suggestions are shown to the merchant, but the app does not create bundles in Shopify.
-- **Products without images.** The demo products have no images; the storefront block shows a placeholder with the product's initial.
+- **Demo product images.** Only some demo products have photos; products without an image show a placeholder with their initial in the storefront block.
 
 ## Run locally
 
