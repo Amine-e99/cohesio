@@ -1,0 +1,55 @@
+{%- comment -%}
+  Recommandations « fréquemment achetés ensemble », chargées côté navigateur
+  depuis l'App Proxy (/apps/cohesio/paires). Le conteneur reste caché tant que
+  le script n'a pas reçu au moins une recommandation.
+{%- endcomment -%}
+{%- if product -%}
+  <div
+    class="cohesio-fbt"
+    hidden
+    data-cohesio-fbt
+    data-product-id="{{ product.id }}"
+    data-max-products="{{ block.settings.max_products }}"
+    data-show-prices="{{ block.settings.show_prices }}"
+    {{ block.shopify_attributes }}
+  >
+    {%- if block.settings.title != blank -%}
+      <h2 class="cohesio-fbt__title">{{ block.settings.title | escape }}</h2>
+    {%- endif -%}
+    <ul class="cohesio-fbt__grid" role="list"></ul>
+  </div>
+{%- endif -%}
+
+{% schema %}
+{
+  "name": "Souvent achetés ensemble",
+  "target": "section",
+  "enabled_on": { "templates": ["product"] },
+  "javascript": "frequently-bought.js",
+  "stylesheet": "frequently-bought.css",
+  "settings": [
+    {
+      "type": "text",
+      "id": "title",
+      "label": "Titre",
+      "default": "Fréquemment achetés ensemble"
+    },
+    {
+      "type": "select",
+      "id": "max_products",
+      "label": "Nombre maximum de produits",
+      "options": [
+        { "value": "2", "label": "2" },
+        { "value": "3", "label": "3" }
+      ],
+      "default": "3"
+    },
+    {
+      "type": "checkbox",
+      "id": "show_prices",
+      "label": "Afficher les prix",
+      "default": true
+    }
+  ]
+}
+{% endschema %}

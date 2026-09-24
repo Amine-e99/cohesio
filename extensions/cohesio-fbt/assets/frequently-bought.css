@@ -1,0 +1,80 @@
+.cohesio-fbt {
+  margin: 2rem 0;
+  font: inherit;
+  color: inherit;
+}
+
+.cohesio-fbt[hidden] {
+  display: none;
+}
+
+.cohesio-fbt__title {
+  margin: 0 0 1rem;
+  font: inherit;
+  font-size: 1.25em;
+  font-weight: 600;
+  color: inherit;
+}
+
+.cohesio-fbt__grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+@media (min-width: 750px) {
+  .cohesio-fbt__grid {
+    grid-template-columns: repeat(var(--cohesio-fbt-columns, 3), minmax(0, 1fr));
+    max-width: 60rem;
+  }
+}
+
+.cohesio-fbt__card {
+  margin: 0;
+}
+
+.cohesio-fbt__link {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  color: inherit;
+  text-decoration: none;
+}
+
+.cohesio-fbt__link:hover .cohesio-fbt__product-title,
+.cohesio-fbt__link:focus-visible .cohesio-fbt__product-title {
+  text-decoration: underline;
+}
+
+.cohesio-fbt__media {
+  aspect-ratio: 1 / 1;
+  overflow: hidden;
+  border-radius: 4px;
+}
+
+.cohesio-fbt__image {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.cohesio-fbt__placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  font-size: 2.5em;
+  font-weight: 600;
+  color: inherit;
+  background-color: rgba(127, 127, 127, 0.12);
+  background-color: color-mix(in srgb, currentColor 8%, transparent);
+}
+
+.cohesio-fbt__price {
+  opacity: 0.8;
+}
