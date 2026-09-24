@@ -44,3 +44,44 @@ model OrderLine {
   @@index([shopId, productId, processedAt]) // stock mort : dernière vente par produit
   @@map("order_lines")
 }
+model Product {
+  id        Int      @id @default(autoincrement())
+  shopId    String   @map("shop_id")
+  productId String   @map("product_id")  // gid Shopify du produit
+  title     String
+  status    String                       // ACTIVE, DRAFT, ARCHIVED
+  createdAt DateTime @map("created_at")  // date de création côté Shopify
+
+  @@unique([shopId, productId])
+  @@map("products")
+}
+
+model ProductPair {
+  id         Int      @id @default(autoincrement())
+  shopId     String   @map("shop_id")
+  productA   String   @map("product_a")
+  productB   String   @map("product_b")
+  coCount    Int      @map("co_count")
+  support    Float
+  confidence Float
+  lift       Float
+  computedAt DateTime @map("computed_at")
+
+  @@unique([shopId, productA, productB])
+  @@index([shopId, productA])            // recommandations pour un produit
+  @@map("product_pairs")
+}
+
+model ProductStat {
+  id             Int       @id @default(autoincrement())
+  shopId         String    @map("shop_id")
+  productId      String    @map("product_id")
+  totalQty       Int       @map("total_qty")
+  ordersCount    Int       @map("orders_count")
+  lastSoldAt     DateTime? @map("last_sold_at")
+  classification String
+  computedAt     DateTime  @map("computed_at")
+
+  @@unique([shopId, productId])
+  @@map("product_stats")
+}

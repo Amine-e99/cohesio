@@ -6,6 +6,7 @@ import {
   runOrdersBulkQuery,
   waitForBulkOperation,
 } from "./bulk-orders.server";
+import { syncProducts } from "./import-products.server";
 
 /** Une ligne prête à être écrite dans `order_lines` (le `shopId` est ajouté à l'insertion). */
 export interface OrderLineInput {
@@ -22,6 +23,8 @@ export interface ImportResult {
   lines: number;
   /** Lignes réellement écrites en base (les doublons sont ignorés). */
   inserted: number;
+  /** Produits du catalogue synchronisés dans `products`. */
+  products: number;
 }
 
 /** PostgreSQL accepte de gros INSERT, mais des lots bornés gardent les requêtes courtes. */
@@ -163,19 +166,21 @@ export async function importOrders(
 }
 
 /**
- * Import initial complet : lance l'opération groupée, attend son résultat,
- * télécharge le JSONL et écrit les lignes en base.
+ * Import initial complet : synchronise le catalogue, lance l'opération groupée,
+ * attend son résultat, télécharge le JSONL et écrit les lignes en base.
  */
 export async function importAllOrders(
   admin: AdminApiContext,
   shopId: string,
 ): Promise<ImportResult> {
+  const products = await syncProducts(admin, shopId);
+
   const operationId = await runOrdersBulkQuery(admin);
   const url = await waitForBulkOperation(admin, operationId);
 
   // Aucun fichier : la boutique n'a aucune commande.
   if (url === null) {
-    return { orders: 0, lines: 0, inserted: 0 };
+    return { orders: 0, lines: 0, inserted: 0, products };
   }
 
   const jsonl = await downloadJsonl(url);
@@ -186,5 +191,6 @@ export async function importAllOrders(
     orders: countOrdersInJsonl(jsonl),
     lines: lines.length,
     inserted,
+    products,
   };
 }
