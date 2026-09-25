@@ -220,3 +220,10 @@ To run the engine once from the command line and print its results: `python run.
 ## Author
 
 Mohamed Amine Attouchi
+
+
+## License
+
+© 2026 Mohamed Amine Attouchi. All rights reserved.
+
+This repository is published as a portfolio showcase. The code may not be copied, redistributed or used commercially without written permission.
